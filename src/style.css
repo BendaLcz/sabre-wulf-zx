@@ -1,0 +1,1067 @@
+@font-face {
+  font-family: "ZX Spectrum 48K";
+  src: url("./assets/zx-spectrum-48k.ttf") format("truetype");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: block;
+}
+
+:root {
+  --bg-dark: #0b0c10;
+  --panel-bg: #14161d;
+  --panel-border: #282c3a;
+  --text-main: #e8eaf0;
+  --text-muted: #9aa0b4;
+  --zx-red: #ff0000;
+  --zx-red-dim: #d70000;
+  --zx-yellow: #ffff00;
+  --zx-green: #00ff00;
+  --zx-cyan: #00ffff;
+  --zx-cyan-dim: #00d7d7;
+  --zx-white-dim: #d7d7d7;
+  --zx-rubber: #4d5866;
+  --zx-rubber-hi: #6d7b8c;
+  --zx-rubber-lo: #282f38;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html,
+body {
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(
+    circle at 50% 35%,
+    #171a24 0%,
+    var(--bg-dark) 75%
+  );
+  color: var(--text-main);
+  font-family:
+    "ZX Spectrum 48K", ui-monospace, "Cascadia Mono", "Consolas", monospace;
+  font-synthesis: none;
+  -webkit-font-smoothing: none;
+  overflow-x: hidden;
+}
+
+.app-shell {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 10px 16px;
+  gap: 10px;
+}
+
+.top-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 12px;
+  background: #050608;
+  border: 2px solid var(--zx-rubber);
+  box-shadow:
+    inset 0 0 0 2px #000000,
+    4px 4px 0 rgba(0, 0, 0, 0.85);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.zx-stripes {
+  display: inline-block;
+  width: 24px;
+  height: 16px;
+  background: linear-gradient(
+    125deg,
+    transparent 0 12%,
+    var(--zx-red) 12% 30%,
+    var(--zx-yellow) 30% 48%,
+    var(--zx-green) 48% 66%,
+    var(--zx-cyan) 66% 84%,
+    transparent 84% 100%
+  );
+}
+
+.brand-title {
+  font-weight: 400;
+  letter-spacing: 0;
+  color: var(--zx-yellow);
+  text-shadow: 1px 1px 0 #000000;
+  font-size: 0.75rem;
+}
+
+.brand-sub {
+  font-size: 0.5625rem;
+  color: var(--zx-white-dim);
+  letter-spacing: 0;
+}
+
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+/* Sinclair ZX Spectrum 48K Rubber Chiclet Toolbar Keys */
+.tool-btn {
+  padding: 2px;
+  background: #0a0c10;
+  color: #ffffff;
+  border: 2px solid #262c36;
+  border-radius: 5px;
+  font-family: inherit;
+  font-size: 0.625rem;
+  font-weight: 400;
+  letter-spacing: 0;
+  cursor: pointer;
+}
+
+.tool-key-face,
+.close-key-face {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  height: 100%;
+  padding: 5px 10px 7px;
+  border-radius: 3px;
+  background: var(--zx-rubber);
+  border-top: 1px solid var(--zx-rubber-hi);
+  box-shadow: inset 0 -3px 0 var(--zx-rubber-lo);
+  text-shadow: 1px 1px 0 #000000;
+  pointer-events: none;
+}
+
+.tool-btn:hover .tool-key-face {
+  background: #586575;
+}
+
+.tool-btn:active .tool-key-face {
+  transform: translateY(2px);
+  box-shadow: inset 0 -1px 0 var(--zx-rubber-lo);
+}
+
+.tool-btn:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.tool-btn:disabled:hover .tool-key-face {
+  background: var(--zx-rubber);
+}
+
+.tool-btn:disabled:active .tool-key-face {
+  transform: none;
+  box-shadow: inset 0 -3px 0 var(--zx-rubber-lo);
+}
+
+.tool-btn.active {
+  border-color: var(--zx-cyan-dim);
+}
+
+.tool-btn.active .btn-label {
+  color: var(--zx-yellow);
+}
+
+.tool-icon {
+  width: 13px;
+  height: 13px;
+  flex-shrink: 0;
+}
+
+.icon-sound-off {
+  display: none;
+}
+
+.tool-btn.muted .icon-sound-waves {
+  display: none;
+}
+
+.tool-btn.muted .icon-sound-off {
+  display: block;
+}
+
+.icon-crt-lines {
+  opacity: 0.35;
+}
+
+.tool-btn.active .icon-crt-lines {
+  opacity: 1;
+}
+
+.icon-pause-play {
+  display: none;
+}
+
+.tool-btn.active .icon-pause-bars {
+  display: none;
+}
+
+.tool-btn.active .icon-pause-play {
+  display: block;
+}
+
+.stage-area {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  min-height: 0;
+}
+
+.monitor-frame {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #000000;
+  border: 3px solid #262a36;
+  border-radius: 10px;
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.75);
+  overflow: hidden;
+  cursor: pointer;
+}
+
+#zx-canvas {
+  display: block;
+  width: min(88vw, calc((100vh - 140px) * 1.25));
+  height: auto;
+  aspect-ratio: 320 / 256;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
+
+.crt-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.28) 50%),
+    radial-gradient(circle at center, transparent 68%, rgba(0, 0, 0, 0.38) 100%);
+  background-size:
+    100% 4px,
+    100% 100%;
+}
+
+.status-pill {
+  position: absolute;
+  bottom: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #000000;
+  border: 2px solid var(--zx-cyan);
+  box-shadow: 3px 3px 0 rgba(0, 0, 0, 0.9);
+  color: var(--zx-yellow);
+  font-size: clamp(0.5rem, 2.2vw, 0.625rem);
+  font-weight: 400;
+  letter-spacing: 0;
+  padding: 6px 10px;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.hidden,
+[hidden] {
+  display: none !important;
+}
+
+/* Jungle Explorer Map & Orchid Guide — ZX Spectrum ULA Window Styling */
+.side-panel {
+  width: 244px;
+  background: #000000;
+  border: 2px solid var(--zx-cyan-dim);
+  box-shadow:
+    inset 0 0 0 2px #000000,
+    4px 4px 0 rgba(0, 0, 0, 0.85);
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+.panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  padding: 5px 6px;
+  background: #0000d7;
+  border: 1px solid var(--zx-cyan);
+}
+
+.panel-header h2 {
+  font-size: 0.625rem;
+  font-weight: 400;
+  color: #ffffff;
+  letter-spacing: 0;
+}
+
+.badge {
+  background: var(--zx-yellow);
+  color: #000000;
+  padding: 2px 5px;
+  font-size: 0.625rem;
+  font-weight: 400;
+  letter-spacing: 0;
+}
+
+.map-frame {
+  align-self: center;
+  max-width: 100%;
+  padding: 3px;
+  background: #000000;
+  border: 2px solid var(--zx-rubber);
+  box-shadow: inset 0 0 0 1px #000000;
+}
+
+#map-canvas {
+  display: block;
+  width: 192px;
+  max-width: 100%;
+  height: auto;
+  aspect-ratio: 1 / 1;
+  background: #000000;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
+
+.map-legend {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 5px;
+  padding: 5px 6px;
+  background: #0a0c10;
+  border: 1px solid #262c36;
+  font-size: 0.5rem;
+  font-weight: 400;
+  letter-spacing: 0;
+  color: var(--zx-white-dim);
+}
+
+.map-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.5);
+}
+.dot-player {
+  background: var(--zx-yellow);
+  border-color: #ffffff;
+}
+.dot-visited {
+  background: #00d700;
+}
+.dot-cave {
+  background: var(--zx-cyan);
+}
+
+.orchid-guide {
+  border-top: 2px solid #262c36;
+  padding-top: 7px;
+}
+
+.orchid-guide h3 {
+  font-size: 0.5625rem;
+  font-weight: 400;
+  letter-spacing: 0;
+  margin-bottom: 6px;
+  color: var(--zx-yellow);
+}
+
+.orchid-guide ul {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 0.5rem;
+  line-height: 1.35;
+  letter-spacing: 0;
+  color: var(--zx-white-dim);
+}
+
+.orchid-guide li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.orchid-guide strong {
+  font-weight: 400;
+  color: #ffffff;
+}
+
+.orchid-px {
+  width: 11px;
+  height: 11px;
+  flex-shrink: 0;
+  image-rendering: pixelated;
+}
+.sw-cyan {
+  color: #00ffff;
+}
+.sw-red {
+  color: #ff0000;
+}
+.sw-magenta {
+  color: #ff00ff;
+}
+.sw-yellow {
+  color: #ffff00;
+}
+.sw-white {
+  color: #ffffff;
+}
+
+.help-bar {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 14px;
+  padding: 7px 12px;
+  background: #050608;
+  border: 2px solid #262c36;
+  font-size: 0.5625rem;
+  letter-spacing: 0;
+  color: var(--zx-white-dim);
+}
+
+.help-bar strong {
+  font-weight: 400;
+  color: var(--zx-cyan);
+}
+
+.help-bar code {
+  font-family: inherit;
+  background: #181c24;
+  border: 1px solid #363f4e;
+  color: var(--zx-yellow);
+  padding: 2px 4px;
+}
+
+/* Touch controls (hidden on desktop) — ZX Spectrum 48K / Kempston Hardware Styling */
+.touch-controls,
+.options-backdrop,
+.options-close {
+  display: none;
+}
+
+body.options-open .touch-controls {
+  display: none !important;
+}
+
+.touch-controls.pads-hidden .joystick,
+.touch-controls.pads-hidden .fire-btn {
+  display: none !important;
+}
+
+.joystick {
+  position: absolute;
+  width: var(--pad-size);
+  height: var(--pad-size);
+  border-radius: 14px;
+  background: rgba(10, 12, 16, 0.76);
+  border: 2px solid var(--zx-rubber);
+  box-shadow:
+    inset 0 2px 0 rgba(255, 255, 255, 0.12),
+    inset 0 -3px 0 rgba(0, 0, 0, 0.75),
+    0 4px 0 rgba(0, 0, 0, 0.65);
+  touch-action: none;
+  pointer-events: auto;
+  -webkit-touch-callout: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* Invisible extension so touches just outside the housing still grab the stick */
+.joystick::before {
+  content: "";
+  position: absolute;
+  inset: -18%;
+  border-radius: 24px;
+}
+
+.joystick.stick-active {
+  border-color: var(--zx-cyan-dim);
+}
+
+.joystick-gate {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.gate-tick {
+  fill: rgba(109, 123, 140, 0.45);
+}
+
+.gate-diag {
+  fill: rgba(109, 123, 140, 0.35);
+}
+
+.gate-arrow {
+  fill: rgba(215, 215, 215, 0.55);
+}
+
+/* Crisp ULA attribute illumination on active stick directions */
+.joystick.dir-up .gate-up,
+.joystick.dir-down .gate-down,
+.joystick.dir-left .gate-left,
+.joystick.dir-right .gate-right {
+  fill: var(--zx-yellow);
+}
+
+.joystick.dir-up.dir-left .diag-ul,
+.joystick.dir-up.dir-right .diag-ur,
+.joystick.dir-down.dir-left .diag-dl,
+.joystick.dir-down.dir-right .diag-dr {
+  fill: var(--zx-cyan);
+}
+
+.joystick-knob {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 42%;
+  height: 42%;
+  margin: -21% 0 0 -21%;
+  border-radius: 9px;
+  background: var(--zx-rubber);
+  border: 2px solid var(--zx-white-dim);
+  box-shadow:
+    inset 0 2px 0 var(--zx-rubber-hi),
+    inset 0 -3px 0 var(--zx-rubber-lo),
+    0 4px 0 rgba(0, 0, 0, 0.8);
+  pointer-events: none;
+  will-change: transform;
+}
+
+.joystick.stick-active .joystick-knob {
+  background: #5a6878;
+  border-color: var(--zx-cyan);
+  box-shadow:
+    inset 0 2px 0 #8091a4,
+    inset 0 -3px 0 var(--zx-rubber-lo),
+    0 2px 0 rgba(0, 0, 0, 0.85);
+}
+
+.knob-glint {
+  position: absolute;
+  top: 5px;
+  left: 5px;
+  width: 6px;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.65);
+  pointer-events: none;
+}
+
+/* Right Action Pad: Sinclair / Kempston Red Action Switch with 1-bit Pixel Sabre */
+.fire-btn {
+  position: absolute;
+  width: var(--pad-size);
+  height: var(--pad-size);
+  padding: 8px;
+  border-radius: 14px;
+  background: rgba(10, 12, 16, 0.76);
+  border: 2px solid var(--zx-rubber);
+  box-shadow:
+    inset 0 2px 0 rgba(255, 255, 255, 0.12),
+    0 4px 0 rgba(0, 0, 0, 0.65);
+  color: #ffffff;
+  font-family: inherit;
+  touch-action: none;
+  pointer-events: auto;
+  -webkit-touch-callout: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.fire-cap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  border-radius: 9px;
+  background: rgba(185, 0, 0, 0.82);
+  border: 2px solid #ff6666;
+  box-shadow:
+    inset 0 2px 0 rgba(255, 255, 255, 0.3),
+    inset 0 -4px 0 rgba(90, 0, 0, 0.9),
+    0 4px 0 rgba(45, 0, 0, 0.95);
+  pointer-events: none;
+}
+
+.fire-sword-svg {
+  width: 56%;
+  height: 56%;
+  image-rendering: pixelated;
+  pointer-events: none;
+}
+
+.fire-btn:active .fire-cap,
+.fire-btn.pressed .fire-cap {
+  transform: translateY(3px);
+  background: rgba(255, 0, 0, 0.92);
+  border-color: var(--zx-yellow);
+  box-shadow:
+    inset 0 2px 0 rgba(255, 255, 255, 0.45),
+    inset 0 -1px 0 rgba(110, 0, 0, 0.9),
+    0 1px 0 rgba(45, 0, 0, 0.95);
+}
+
+/* Dedicated ZX Spectrum 48K Rubber-Key Controls for Hall of Fame Initials Entry */
+.initials-controls {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.init-stepper {
+  position: absolute;
+  display: flex;
+  gap: 8px;
+  pointer-events: auto;
+}
+
+.init-actions {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  pointer-events: auto;
+}
+
+.init-btn {
+  padding: 3px;
+  border-radius: 8px;
+  background: rgba(10, 12, 16, 0.85);
+  border: 2px solid var(--zx-rubber);
+  box-shadow: 0 4px 0 rgba(0, 0, 0, 0.7);
+  color: #ffffff;
+  font-family: inherit;
+  touch-action: none;
+  pointer-events: auto;
+}
+
+.init-btn:disabled {
+  opacity: 0.4;
+}
+
+.init-key-face {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  height: 100%;
+  border-radius: 5px;
+  background: var(--zx-rubber);
+  border-top: 1px solid var(--zx-rubber-hi);
+  box-shadow: inset 0 -4px 0 var(--zx-rubber-lo);
+  color: #ffffff;
+  text-shadow: 1px 1px 0 #000000;
+  pointer-events: none;
+}
+
+.init-enter-btn {
+  border-color: var(--zx-cyan-dim);
+}
+
+.init-enter-face {
+  background: #0000c8;
+  border-top-color: var(--zx-cyan);
+  box-shadow: inset 0 -4px 0 #000068;
+}
+
+.init-btn:not(:disabled):active .init-key-face,
+.init-btn.pressed .init-key-face {
+  transform: translateY(3px);
+  border-top-color: var(--zx-yellow);
+  color: var(--zx-yellow);
+  box-shadow: inset 0 -1px 0 var(--zx-rubber-lo);
+}
+
+.init-enter-btn:not(:disabled):active .init-enter-face {
+  background: #0000ff;
+  box-shadow: inset 0 -1px 0 #000068;
+}
+
+.init-arrow-svg {
+  width: 24px;
+  height: 24px;
+}
+
+.init-icon-svg {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+
+.init-key-label {
+  font-size: 0.625rem;
+  font-weight: 400;
+  letter-spacing: 0;
+  line-height: 1;
+}
+
+/* Top-Right Options Key: Authentic ZX Spectrum 48K Grey-Blue Rubber Chiclet Key */
+.options-btn {
+  position: absolute;
+  top: calc(8px + var(--safe-t, env(safe-area-inset-top, 0px)));
+  right: calc(8px + var(--safe-r, env(safe-area-inset-right, 0px)));
+  width: 54px;
+  height: 42px;
+  padding: 3px;
+  border-radius: 6px;
+  background: rgba(10, 12, 16, 0.85);
+  border: 2px solid #262c36;
+  box-shadow: 0 3px 0 rgba(0, 0, 0, 0.7);
+  color: #ffffff;
+  font-family: inherit;
+  pointer-events: auto;
+}
+
+.zx-key-face {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  width: 100%;
+  height: 100%;
+  border-radius: 3px;
+  background: var(--zx-rubber);
+  border-top: 1px solid var(--zx-rubber-hi);
+  box-shadow: inset 0 -3px 0 var(--zx-rubber-lo);
+  pointer-events: none;
+}
+
+.options-btn:active .zx-key-face {
+  transform: translateY(2px);
+  box-shadow: inset 0 -1px 0 var(--zx-rubber-lo);
+}
+
+.opt-bars-svg {
+  width: 14px;
+  height: 11px;
+}
+
+.opt-key-label {
+  font-size: 0.5rem;
+  font-weight: 400;
+  letter-spacing: 0;
+  color: #ffffff;
+  line-height: 1;
+  text-shadow: 1px 1px 0 #000000;
+}
+
+@media (pointer: coarse), (max-width: 760px) {
+  :root {
+    --safe-l: max(env(safe-area-inset-left, 0px), var(--fs-pad-l, 0px));
+    --safe-r: max(env(safe-area-inset-right, 0px), var(--fs-pad-r, 0px));
+    --safe-t: env(safe-area-inset-top, 0px);
+    --safe-b: env(safe-area-inset-bottom, 0px);
+  }
+
+  html {
+    width: 100%;
+    height: 100%;
+    background: #000000;
+    overflow: hidden;
+    overscroll-behavior: none;
+    touch-action: none;
+    -webkit-touch-callout: none;
+  }
+
+  body {
+    position: fixed;
+    inset: 0;
+    width: auto;
+    height: auto;
+    background: #000000;
+    overflow: hidden;
+    overscroll-behavior: none;
+    touch-action: none;
+    -webkit-touch-callout: none;
+  }
+
+  .app-shell {
+    display: block;
+    min-height: 0;
+    width: 100%;
+    height: 100%;
+    padding: 0;
+  }
+
+  .help-bar,
+  .brand-sub,
+  .status-pill,
+  #btn-pause {
+    display: none !important;
+  }
+
+  /* Game screen fills the safe viewport, keeping the 4:3 aspect ratio of the 256x192 display.
+     The 32px border of the 320x256 canvas is cropped away so the picture itself is larger. */
+  .stage-area {
+    display: block;
+  }
+
+  .monitor-frame {
+    --frame-w-eff: var(
+      --frame-w,
+      calc(100vw - var(--safe-l) - var(--safe-r))
+    );
+    --frame-h-eff: var(
+      --frame-h,
+      calc(100dvh - var(--safe-t) - var(--safe-b))
+    );
+    --s: min(calc(var(--frame-w-eff) / 256), calc(var(--frame-h-eff) / 192));
+    position: fixed;
+    top: var(--safe-t);
+    right: var(--safe-r);
+    bottom: var(--safe-b);
+    left: var(--safe-l);
+    width: auto;
+    height: auto;
+    display: block;
+    z-index: 1;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+    cursor: default;
+  }
+
+  #zx-canvas {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: calc(var(--s) * 320);
+    height: calc(var(--s) * 256);
+    margin: 0;
+    transform: translate(-50%, -50%);
+    clip-path: inset(calc(var(--s) * 32));
+  }
+
+  /* Intro image only occupies the top 168 px (21 rows) of the display: crop the empty rest */
+  .monitor-frame.intro {
+    --s: min(calc(var(--frame-w-eff) / 256), calc(var(--frame-h-eff) / 168));
+  }
+
+  .monitor-frame.intro #zx-canvas {
+    transform: translate(-50%, calc(-50% + var(--s) * 12));
+    clip-path: inset(
+      calc(var(--s) * 32) calc(var(--s) * 32) calc(var(--s) * 56)
+    );
+  }
+
+  /* Overlay controls */
+  .touch-controls {
+    display: block;
+    position: fixed;
+    inset: 0;
+    width: auto;
+    height: auto;
+    z-index: 10;
+    pointer-events: none;
+    --pad-size: clamp(96px, min(36dvh, 36vw), 160px);
+  }
+
+  .joystick {
+    left: calc(4vw + var(--safe-l));
+    bottom: calc(4dvh + var(--safe-b));
+  }
+
+  .fire-btn {
+    right: calc(4vw + var(--safe-r));
+    bottom: calc(4dvh + var(--safe-b));
+  }
+
+  .init-stepper {
+    left: calc(3vw + var(--safe-l));
+    bottom: calc(4dvh + var(--safe-b));
+  }
+
+  .init-stepper .init-btn {
+    width: clamp(54px, 7.5vw, 72px);
+    height: clamp(64px, 19dvh, 84px);
+  }
+
+  .init-actions {
+    right: calc(3vw + var(--safe-r));
+    bottom: calc(4dvh + var(--safe-b));
+    width: clamp(94px, 13vw, 124px);
+  }
+
+  .init-del-btn {
+    height: clamp(40px, 11dvh, 48px);
+  }
+
+  .init-enter-btn {
+    height: clamp(60px, 17dvh, 76px);
+  }
+
+  /* Options screen: top bar + map become ZX Spectrum ULA modal panels */
+  .options-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 40;
+    background: rgba(0, 0, 0, 0.55);
+  }
+
+  body.options-open .options-backdrop {
+    display: block;
+  }
+
+  .top-bar,
+  .side-panel {
+    display: none;
+    position: fixed;
+    z-index: 50;
+    top: calc(8px + var(--safe-t));
+    bottom: calc(8px + var(--safe-b));
+    overflow-y: auto;
+    touch-action: pan-y;
+    background: #000000;
+  }
+
+  body.options-open .top-bar {
+    display: flex;
+    flex-direction: column;
+    flex-wrap: nowrap;
+    align-items: stretch;
+    justify-content: flex-start;
+    gap: 10px;
+    padding: 10px;
+    left: calc(8px + var(--safe-l));
+    width: min(44vw, 250px);
+    border: 2px solid var(--zx-cyan-dim);
+  }
+
+  body.options-open .top-bar .brand {
+    padding: 4px 6px;
+    background: #0000d7;
+    border: 1px solid var(--zx-cyan);
+    justify-content: center;
+  }
+
+  body.options-open .side-panel:not(.hidden) {
+    display: flex;
+    right: calc(8px + var(--safe-r));
+    width: min(44vw, 250px);
+  }
+
+  .toolbar {
+    display: flex;
+    flex-direction: column;
+    flex-wrap: nowrap;
+    gap: 8px;
+  }
+
+  .tool-key-face,
+  .close-key-face {
+    justify-content: flex-start;
+    padding: 10px 12px 12px;
+    font-size: 0.6875rem;
+  }
+
+  .options-close {
+    display: block;
+    margin-top: auto;
+    padding: 2px;
+    background: #0a0c10;
+    color: #ffffff;
+    border: 2px solid #5a1820;
+    border-radius: 5px;
+    font-family: inherit;
+    font-weight: 400;
+    letter-spacing: 0;
+    cursor: pointer;
+  }
+
+  .close-key-face {
+    justify-content: center;
+    background: #b80000;
+    border-top: 1px solid #ff5555;
+    box-shadow: inset 0 -3px 0 #5c0000;
+  }
+
+  .options-close:active .close-key-face {
+    transform: translateY(2px);
+    background: var(--zx-red);
+    box-shadow: inset 0 -1px 0 #5c0000;
+  }
+}
+
+@media (pointer: coarse) and (orientation: portrait),
+  (max-width: 760px) and (orientation: portrait) {
+  #zx-canvas,
+  .monitor-frame.intro #zx-canvas {
+    top: 0;
+    transform: translate(-50%, calc(var(--s) * -32));
+  }
+
+  body.options-open .top-bar {
+    right: calc(8px + var(--safe-r));
+    bottom: auto;
+    width: auto;
+    max-height: 45dvh;
+  }
+
+  body.options-open .side-panel:not(.hidden) {
+    top: auto;
+    left: calc(8px + var(--safe-l));
+    width: auto;
+    max-height: 50dvh;
+  }
+
+  .init-stepper {
+    left: calc(5vw + var(--safe-l));
+    bottom: calc(6dvh + var(--safe-b));
+  }
+
+  .init-stepper .init-btn {
+    width: clamp(68px, 19vw, 84px);
+    height: 76px;
+  }
+
+  .init-actions {
+    right: calc(5vw + var(--safe-r));
+    bottom: calc(6dvh + var(--safe-b));
+    width: clamp(114px, 31vw, 138px);
+  }
+
+  .init-del-btn {
+    height: 46px;
+  }
+
+  .init-enter-btn {
+    height: 76px;
+  }
+}
