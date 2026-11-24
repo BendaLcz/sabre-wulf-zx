@@ -27,6 +27,9 @@ const btnMenu = document.getElementById("btn-menu") as HTMLButtonElement;
 const btnFullscreen = document.getElementById(
   "btn-fullscreen",
 ) as HTMLButtonElement;
+const btnForceLandscape = document.getElementById(
+  "btn-force-landscape",
+) as HTMLButtonElement;
 
 const mapDrawer = document.getElementById("map-drawer") as HTMLElement;
 const mapCanvas = document.getElementById("map-canvas") as HTMLCanvasElement;
@@ -204,21 +207,51 @@ function canUseFullscreenApi(): boolean {
   const doc = document as Document & { webkitFullscreenEnabled?: boolean };
   return Boolean(doc.fullscreenEnabled || doc.webkitFullscreenEnabled);
 }
+async function tryLockLandscape(): Promise<void> {
+  const orient = window.screen.orientation as ScreenOrientation & {
+    lock?: (orientation: string) => Promise<void>;
+  };
+  try {
+    await orient?.lock?.("landscape");
+  } catch {
+    // Ignored when browser denies orientation lock outside fullscreen/WebAPK.
+  }
+}
+async function enterFullscreenLandscape(): Promise<void> {
+  try {
+    if (!document.fullscreenElement) {
+      await document.documentElement.requestFullscreen?.({
+        navigationUI: "hide",
+      });
+    }
+    await tryLockLandscape();
+  } catch {
+    // Request denied — ignore.
+  }
+}
 function syncFullscreenButtonVisibility(): void {
-  btnFullscreen.hidden = isInstalledStandaloneApp() || !canUseFullscreenApi();
+  const hideFs = isInstalledStandaloneApp() || !canUseFullscreenApi();
+  btnFullscreen.hidden = hideFs;
+  btnForceLandscape.hidden = hideFs;
 }
 syncFullscreenButtonVisibility();
 standaloneModeQuery.addEventListener?.("change", syncFullscreenButtonVisibility);
+if (isInstalledStandaloneApp()) {
+  void tryLockLandscape();
+}
 
 btnFullscreen.addEventListener("click", () => {
   btnFullscreen.blur();
   if (!document.fullscreenElement) {
-    void document.documentElement.requestFullscreen?.({
-      navigationUI: "hide",
-    });
+    void enterFullscreenLandscape();
   } else {
     void document.exitFullscreen?.();
   }
+});
+btnForceLandscape.addEventListener("click", () => {
+  btnForceLandscape.blur();
+  game.beeper.unlock();
+  void enterFullscreenLandscape();
 });
 document.addEventListener("fullscreenchange", () => {
   btnFullscreen.classList.toggle("active", Boolean(document.fullscreenElement));
@@ -815,6 +848,30 @@ function updateUiIndicators(): void {
   }
 }
 
+const mobilePortraitQuery = window.matchMedia(
+  "(pointer: coarse) and (orientation: portrait)",
+);
+let pausedByPortraitLock = false;
+
+function syncPortraitLockPause(): void {
+  if (mobilePortraitQuery.matches) {
+    if (!pausedByPortraitLock) {
+      pausedByPortraitLock = true;
+      clearTouchPadState();
+      game.beeper.setPaused(true);
+    }
+  } else if (pausedByPortraitLock) {
+    pausedByPortraitLock = false;
+    if (
+      !document.body.classList.contains("options-open") &&
+      !game.input.isPaused()
+    ) {
+      game.beeper.setPaused(false);
+    }
+  }
+}
+mobilePortraitQuery.addEventListener?.("change", syncPortraitLockPause);
+
 // Fixed 50 Hz ZX Spectrum ULA frame loop (20 ms per interrupt)
 const ZX_FRAME_MS = 1000 / 50;
 let lastTime = performance.now();
@@ -823,6 +880,12 @@ let accumulator = 0;
 function frameLoop(now: number): void {
   const dt = Math.min(100, now - lastTime);
   lastTime = now;
+  syncPortraitLockPause();
+  if (pausedByPortraitLock) {
+    accumulator = 0;
+    requestAnimationFrame(frameLoop);
+    return;
+  }
   accumulator += dt;
 
   resyncJoystick();

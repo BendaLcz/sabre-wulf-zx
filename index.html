@@ -488,6 +488,44 @@
       </section>
       <div id="options-backdrop" class="options-backdrop"></div>
 
+      <!-- Shown on touch devices if held in portrait (e.g. mobile browser before fullscreen lock) -->
+      <div
+        id="rotate-overlay"
+        class="rotate-overlay"
+        role="status"
+        aria-live="polite"
+      >
+        <div class="rotate-card">
+          <svg
+            class="rotate-icon-svg"
+            viewBox="0 0 24 16"
+            shape-rendering="crispEdges"
+            aria-hidden="true"
+          >
+            <path
+              fill="#00ffff"
+              d="M2 2h20v12H2V2zm2 2v8h14V4H4zm15 3h2v2h-2V7z"
+            />
+            <path
+              fill="#ffff00"
+              d="M8 6h6v1h1v1h1v1h-1v1h-1v1H8V9h4V8H8V6z"
+            />
+          </svg>
+          <p class="rotate-title">LANDSCAPE MODE</p>
+          <p class="rotate-sub">ROTATE YOUR PHONE HORIZONTALLY TO PLAY</p>
+          <button
+            id="btn-force-landscape"
+            class="tool-btn rotate-btn"
+            type="button"
+            hidden
+          >
+            <span class="tool-key-face">
+              <span class="btn-label">ENTER LANDSCAPE</span>
+            </span>
+          </button>
+        </div>
+      </div>
+
       <footer class="help-bar">
         <span
           ><strong>Menu:</strong> <code>1</code> / <code>2</code> Players ·
