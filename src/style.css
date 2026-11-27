@@ -466,7 +466,8 @@ body {
 .touch-controls,
 .options-backdrop,
 .options-close,
-.rotate-overlay {
+.rotate-overlay,
+.label-mobile {
   display: none;
 }
 
@@ -824,8 +825,13 @@ body.options-open .touch-controls {
   .help-bar,
   .brand-sub,
   .status-pill,
-  #btn-pause {
+  #btn-pause,
+  .label-desktop {
     display: none !important;
+  }
+
+  .label-mobile {
+    display: inline;
   }
 
   /* Game screen fills the safe viewport, keeping the 4:3 aspect ratio of the 256x192 display.

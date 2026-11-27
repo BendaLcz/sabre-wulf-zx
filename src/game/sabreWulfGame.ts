@@ -580,8 +580,8 @@ export class SabreWulfGame {
       const items: MobileMenuItem[] = [
         {
           y: rows[r++],
-          attr: 0x46,
-          text: this.twoPlayers ? "2 PLAYER GAME" : "1 PLAYER GAME",
+          attr: 0x45,
+          text: this.twoPlayers ? "GAME: 2 PLAYERS" : "GAME: 1 PLAYER",
           action: () => {
             this.twoPlayers = !this.twoPlayers;
             this.beeper.playHighTone();
@@ -590,7 +590,7 @@ export class SabreWulfGame {
         },
         {
           y: rows[r++],
-          attr: soundOn ? 0x46 : 0x45,
+          attr: 0x45,
           text: soundOn ? "SOUND: ON" : "SOUND: OFF",
           action: () => {
             this.uiHooks?.toggleMute();
@@ -602,7 +602,7 @@ export class SabreWulfGame {
         },
         {
           y: rows[r++],
-          attr: crtOn ? 0x46 : 0x45,
+          attr: 0x45,
           text: crtOn ? "CRT: ON" : "CRT: OFF",
           action: () => {
             this.uiHooks?.toggleCrt();
@@ -615,7 +615,7 @@ export class SabreWulfGame {
       if (showFullscreen) {
         items.push({
           y: rows[r++],
-          attr: fsOn ? 0x46 : 0x45,
+          attr: 0x45,
           text: fsOn ? "FULLSCREEN: ON" : "FULLSCREEN: OFF",
           action: () => {
             this.uiHooks?.toggleFullscreen();
