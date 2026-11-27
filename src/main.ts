@@ -279,7 +279,16 @@ monitorFrame.addEventListener("pointerdown", (ev) => {
 // not on pointerdown, so also (re)try unlocking the audio context there. A tune queued by the
 // first tap then starts as soon as the context resumes.
 for (const type of ["pointerup", "touchend", "click"] as const) {
-  window.addEventListener(type, () => game.beeper.unlock(), { capture: true });
+  window.addEventListener(
+    type,
+    () => {
+      if (!document.hidden) {
+        game.beeper.setBackgroundSuspended(false);
+      }
+      game.beeper.unlock();
+    },
+    { capture: true },
+  );
 }
 
 // Global UI convenience hotkeys (M = Map, C = CRT, Esc = Menu, F = Fullscreen)
@@ -740,16 +749,45 @@ btnOptions.addEventListener("click", () => {
 btnOptionsClose.addEventListener("click", () => setOptionsOpen(false));
 optionsBackdrop.addEventListener("click", () => setOptionsOpen(false));
 
-// Auto-pause when switching away from the app or locking the phone screen
-document.addEventListener("visibilitychange", () => {
-  if (!document.hidden || !isPausablePhase()) return;
+// Silence all audio (including menu/cutscene music) & auto-pause gameplay when minimizing
+// the app, opening the OS app switcher, or turning the phone display off.
+function suspendForBackground(): void {
+  clearTouchPadState();
+  game.beeper.setBackgroundSuspended(true);
+  if (!isPausablePhase()) return;
   if (window.matchMedia("(pointer: coarse)").matches) {
     setOptionsOpen(true);
   } else {
     game.input.setPaused(true);
     game.beeper.setPaused(true);
   }
+}
+
+function resumeFromBackgroundIfActive(): void {
+  if (document.hidden) return;
+  game.beeper.setBackgroundSuspended(false);
+}
+
+document.addEventListener("visibilitychange", () => {
+  if (document.hidden) {
+    suspendForBackground();
+  } else {
+    resumeFromBackgroundIfActive();
+  }
 });
+window.addEventListener("pagehide", suspendForBackground);
+window.addEventListener("pageshow", resumeFromBackgroundIfActive);
+document.addEventListener("freeze", suspendForBackground);
+document.addEventListener("resume", resumeFromBackgroundIfActive);
+window.addEventListener("blur", () => {
+  if (
+    window.matchMedia("(pointer: coarse)").matches ||
+    isInstalledStandaloneApp()
+  ) {
+    suspendForBackground();
+  }
+});
+window.addEventListener("focus", resumeFromBackgroundIfActive);
 
 function renderExplorerMap(): void {
   const snap = game.getMapSnapshot();
@@ -881,7 +919,7 @@ function frameLoop(now: number): void {
   const dt = Math.min(100, now - lastTime);
   lastTime = now;
   syncPortraitLockPause();
-  if (pausedByPortraitLock) {
+  if (document.hidden || pausedByPortraitLock) {
     accumulator = 0;
     requestAnimationFrame(frameLoop);
     return;

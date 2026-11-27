@@ -20,6 +20,7 @@ export class ZXBeeper {
 
   private muted = false;
   private paused = false;
+  private backgroundSuspended = false;
   private volume = 0.35;
 
   private activeTuneSource: AudioBufferSourceNode | null = null;
@@ -27,6 +28,26 @@ export class ZXBeeper {
 
   // Footstep counter ($96B3)
   public footstepCounter = 0;
+
+  private shouldSuspend(): boolean {
+    return this.paused || this.backgroundSuspended;
+  }
+
+  private syncOutputState(): void {
+    if (!this.ctx) return;
+    if (this.masterGain) {
+      const gain = this.muted || this.shouldSuspend() ? 0 : this.volume;
+      this.masterGain.gain.value = gain;
+      this.masterGain.gain.setValueAtTime(gain, this.ctx.currentTime);
+    }
+    if (this.shouldSuspend()) {
+      if (this.ctx.state === 'running') {
+        void this.ctx.suspend();
+      }
+    } else if (this.ctx.state === 'suspended') {
+      void this.ctx.resume();
+    }
+  }
 
   public unlock(): void {
     if (!this.ctx) {
@@ -41,31 +62,24 @@ export class ZXBeeper {
       this.filterNode.Q.value = 0.6;
 
       this.masterGain = this.ctx.createGain();
-      this.masterGain.gain.value = this.muted ? 0 : this.volume;
+      this.masterGain.gain.value = this.muted || this.shouldSuspend() ? 0 : this.volume;
 
       this.filterNode.connect(this.masterGain);
       this.masterGain.connect(this.ctx.destination);
     }
-    if (this.paused) {
-      if (this.ctx.state === 'running') {
-        void this.ctx.suspend();
-      }
-      return;
-    }
-    if (this.ctx.state === 'suspended') {
-      void this.ctx.resume();
-    }
+    this.syncOutputState();
   }
 
   public setPaused(paused: boolean): void {
     if (this.paused === paused) return;
     this.paused = paused;
-    if (!this.ctx) return;
-    if (paused && this.ctx.state === 'running') {
-      void this.ctx.suspend();
-    } else if (!paused && this.ctx.state === 'suspended') {
-      void this.ctx.resume();
-    }
+    this.syncOutputState();
+  }
+
+  public setBackgroundSuspended(suspended: boolean): void {
+    if (this.backgroundSuspended === suspended) return;
+    this.backgroundSuspended = suspended;
+    this.syncOutputState();
   }
 
   public isPaused(): boolean {
@@ -74,11 +88,7 @@ export class ZXBeeper {
 
   public setMuted(muted: boolean): void {
     this.muted = muted;
-    if (this.masterGain && this.ctx) {
-      const gain = muted ? 0 : this.volume;
-      this.masterGain.gain.value = gain;
-      this.masterGain.gain.setValueAtTime(gain, this.ctx.currentTime);
-    }
+    this.syncOutputState();
   }
 
   public isMuted(): boolean {
@@ -145,9 +155,7 @@ export class ZXBeeper {
     if (!this.ctx || !this.filterNode) {
       return durationSec;
     }
-    if (!this.paused && this.ctx.state === 'suspended') {
-      void this.ctx.resume();
-    }
+    this.syncOutputState();
 
     const buffer = this.renderSegments(segments);
     if (!buffer) return durationSec;
@@ -270,8 +278,8 @@ export class ZXBeeper {
   }
 
   private playSegments(segments: ToneSegment[]): void {
-    if (!this.ctx || !this.filterNode || this.muted) return;
-    if (!this.paused && this.ctx.state === 'suspended') {
+    if (!this.ctx || !this.filterNode || this.muted || this.shouldSuspend()) return;
+    if (this.ctx.state === 'suspended') {
       void this.ctx.resume();
     }
     const buffer = this.renderSegments(segments);
