@@ -15,7 +15,6 @@ import {
   getNewHighScoreMessages,
   HALL_OF_FAME_LINES,
   HighScoreEntry,
-  MOBILE_GAME_MENU_LINES,
   POEMS,
 } from "../data/messages";
 import {
@@ -76,6 +75,26 @@ import {
 
 const HOF_STORAGE_KEY = "sabrewulf_hall_of_fame_v1";
 
+export interface ExternalUiHooks {
+  isStandaloneApp: () => boolean;
+  canFullscreen: () => boolean;
+  isFullscreen: () => boolean;
+  toggleFullscreen: () => void;
+  isCrtEnabled: () => boolean;
+  toggleCrt: () => void;
+  toggleMute: () => void;
+  quitApp: () => void;
+}
+
+type MobileMenuSubScreen = "MAIN" | "OPTIONS" | "QUIT_PROMPT";
+
+interface MobileMenuItem {
+  readonly y: number;
+  readonly attr: number;
+  readonly text: string;
+  readonly action: () => void;
+}
+
 export class SabreWulfGame {
   public readonly screen: ZXScreen;
   public readonly beeper: ZXBeeper;
@@ -109,6 +128,8 @@ export class SabreWulfGame {
 
   private menuIdleTimer = 0x0300;
   private menuAwaitKeyRelease = false;
+  private menuSubScreen: MobileMenuSubScreen = "MAIN";
+  private uiHooks: ExternalUiHooks | null = null;
   private phaseWaitFrames = 0;
   private hofReturnToMenu = true;
   private pauseBorderPhase = 0;
@@ -170,10 +191,23 @@ export class SabreWulfGame {
     );
     mobileLayoutQuery?.addEventListener?.("change", () => {
       if (this.phase === "MENU") {
-        this.screen.clearPanel();
+        this.menuSubScreen = "MAIN";
         this.drawMenuLines();
+      } else if (this.phase === "HALL_OF_FAME") {
+        this.drawHallOfFameScreen();
       }
     });
+  }
+
+  public setExternalUiHooks(hooks: ExternalUiHooks): void {
+    this.uiHooks = hooks;
+    this.refreshMenuIfActive();
+  }
+
+  public refreshMenuIfActive(): void {
+    if (this.phase === "MENU") {
+      this.drawMenuLines();
+    }
   }
 
   private isMobileMenuLayout(): boolean {
@@ -232,13 +266,24 @@ export class SabreWulfGame {
    */
   public handleScreenTap(fx: number, fy: number): void {
     this.beeper.unlock();
-    if (this.phase === "LOADING" || this.phase === "HALL_OF_FAME") {
+    if (this.phase === "LOADING") {
       this.triggerPrimaryAction();
       return;
     }
 
     const x = fx * CANVAS_WIDTH - ZX_BORDER;
     const y = fy * CANVAS_HEIGHT - ZX_BORDER;
+
+    if (this.phase === "HALL_OF_FAME") {
+      if (!this.isMobileMenuLayout()) {
+        this.triggerPrimaryAction();
+      } else if (x >= 32 && x < 224 && y >= 0x8e && y < 0xac) {
+        this.beeper.playLowTone();
+        this.finishHallOfFame();
+      }
+      return;
+    }
+
     if (x < 0 || x >= 256 || y < 0) return;
 
     if (this.phase === "ENTER_INITIALS") {
@@ -255,6 +300,11 @@ export class SabreWulfGame {
     }
 
     if (this.phase !== "MENU") return;
+
+    if (this.isMobileMenuLayout()) {
+      this.handleMobileMenuTap(x, y);
+      return;
+    }
 
     if (y >= 0x40 && y < 0x58) {
       this.selectPlayers(false);
@@ -346,6 +396,10 @@ export class SabreWulfGame {
       }
 
       case "HALL_OF_FAME": {
+        if (this.isMobileMenuLayout()) {
+          // On mobile, stay on Hall of Fame until 'BACK TO MENU' is tapped
+          break;
+        }
         if (this.phaseWaitFrames > 0) this.phaseWaitFrames--;
         if (this.input.isAnyKeyDown() || this.phaseWaitFrames <= 0) {
           if (this.phaseWaitFrames < 580 || !this.hofReturnToMenu) {
@@ -475,6 +529,7 @@ export class SabreWulfGame {
 
   private enterMenu(): void {
     this.phase = "MENU";
+    this.menuSubScreen = "MAIN";
     this.input.setPaused(false);
     this.players[0].lives = 0;
     this.players[1].lives = 0;
@@ -488,12 +543,212 @@ export class SabreWulfGame {
     this.beeper.playTune(TUNE_MAIN);
   }
 
+  private printCenteredLine(yPx: number, attr: number, text: string): void {
+    const xPx = Math.max(0, (256 - text.length * 8) >> 1);
+    this.screen.printColourString(xPx, yPx, attr, text);
+  }
+
+  private getMobileMenuItems(): MobileMenuItem[] {
+    const standalone = Boolean(this.uiHooks?.isStandaloneApp());
+    const showFullscreen =
+      !standalone && Boolean(this.uiHooks?.canFullscreen());
+
+    if (this.menuSubScreen === "QUIT_PROMPT") {
+      return [
+        {
+          y: 0x90,
+          attr: 0x47,
+          text: "BACK TO MENU",
+          action: () => {
+            this.beeper.playLowTone();
+            this.menuSubScreen = "MAIN";
+            this.drawMenuLines();
+          },
+        },
+      ];
+    }
+
+    if (this.menuSubScreen === "OPTIONS") {
+      const soundOn = !this.beeper.isMuted();
+      const crtOn = Boolean(this.uiHooks?.isCrtEnabled());
+      const fsOn = Boolean(this.uiHooks?.isFullscreen());
+      const rows = showFullscreen
+        ? [0x30, 0x48, 0x60, 0x78, 0x98]
+        : [0x38, 0x50, 0x68, 0x90];
+      let r = 0;
+
+      const items: MobileMenuItem[] = [
+        {
+          y: rows[r++],
+          attr: 0x46,
+          text: this.twoPlayers ? "2 PLAYER GAME" : "1 PLAYER GAME",
+          action: () => {
+            this.twoPlayers = !this.twoPlayers;
+            this.beeper.playHighTone();
+            this.drawMenuLines();
+          },
+        },
+        {
+          y: rows[r++],
+          attr: soundOn ? 0x46 : 0x45,
+          text: soundOn ? "SOUND: ON" : "SOUND: OFF",
+          action: () => {
+            this.uiHooks?.toggleMute();
+            if (!this.beeper.isMuted()) {
+              this.beeper.playHighTone();
+            }
+            this.drawMenuLines();
+          },
+        },
+        {
+          y: rows[r++],
+          attr: crtOn ? 0x46 : 0x45,
+          text: crtOn ? "CRT: ON" : "CRT: OFF",
+          action: () => {
+            this.uiHooks?.toggleCrt();
+            this.beeper.playHighTone();
+            this.drawMenuLines();
+          },
+        },
+      ];
+
+      if (showFullscreen) {
+        items.push({
+          y: rows[r++],
+          attr: fsOn ? 0x46 : 0x45,
+          text: fsOn ? "FULLSCREEN: ON" : "FULLSCREEN: OFF",
+          action: () => {
+            this.uiHooks?.toggleFullscreen();
+            this.beeper.playHighTone();
+            this.drawMenuLines();
+          },
+        });
+      }
+
+      items.push({
+        y: rows[r++],
+        attr: 0x47,
+        text: "BACK TO MENU",
+        action: () => {
+          this.beeper.playLowTone();
+          this.menuSubScreen = "MAIN";
+          this.drawMenuLines();
+        },
+      });
+      return items;
+    }
+
+    // Top-level mobile Main Menu ("MAIN")
+    if (standalone) {
+      return [
+        {
+          y: 0x40,
+          attr: 0x46,
+          text: "START GAME",
+          action: () => {
+            this.beeper.stopTune();
+            this.startNewGame();
+          },
+        },
+        {
+          y: 0x58,
+          attr: 0x45,
+          text: "HALL OF FAME",
+          action: () => {
+            this.beeper.playLowTone();
+            this.enterHallOfFame(true);
+          },
+        },
+        {
+          y: 0x70,
+          attr: 0x45,
+          text: "OPTIONS",
+          action: () => {
+            this.beeper.playLowTone();
+            this.menuSubScreen = "OPTIONS";
+            this.drawMenuLines();
+          },
+        },
+        {
+          y: 0x88,
+          attr: 0x47,
+          text: "QUIT",
+          action: () => {
+            this.beeper.stopTune();
+            this.menuSubScreen = "QUIT_PROMPT";
+            this.drawMenuLines();
+            this.uiHooks?.quitApp();
+          },
+        },
+      ];
+    }
+
+    return [
+      {
+        y: 0x40,
+        attr: 0x46,
+        text: "START GAME",
+        action: () => {
+          this.beeper.stopTune();
+          this.startNewGame();
+        },
+      },
+      {
+        y: 0x60,
+        attr: 0x45,
+        text: "HALL OF FAME",
+        action: () => {
+          this.beeper.playLowTone();
+          this.enterHallOfFame(true);
+        },
+      },
+      {
+        y: 0x80,
+        attr: 0x45,
+        text: "OPTIONS",
+        action: () => {
+          this.beeper.playLowTone();
+          this.menuSubScreen = "OPTIONS";
+          this.drawMenuLines();
+        },
+      },
+    ];
+  }
+
+  private handleMobileMenuTap(x: number, y: number): void {
+    if (x < 32 || x >= 224) return;
+    const items = this.getMobileMenuItems();
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i];
+      const topY =
+        i === 0 ? item.y - 12 : (items[i - 1].y + 8 + item.y) >> 1;
+      const botY =
+        i === items.length - 1
+          ? item.y + 20
+          : (item.y + 8 + items[i + 1].y) >> 1;
+      if (y >= topY && y < botY) {
+        item.action();
+        return;
+      }
+    }
+  }
+
   private drawMenuLines(): void {
-    const lines = this.isMobileMenuLayout()
-      ? MOBILE_GAME_MENU_LINES
-      : GAME_MENU_LINES;
-    for (let i = 0; i < lines.length; i++) {
-      const line = lines[i];
+    this.screen.clearPanel();
+    if (this.isMobileMenuLayout()) {
+      if (this.menuSubScreen === "QUIT_PROMPT") {
+        this.printCenteredLine(0x50, 0x46, "THANK YOU FOR PLAYING");
+        this.printCenteredLine(0x68, 0x45, "SWIPE HOME TO CLOSE");
+      }
+      for (const item of this.getMobileMenuItems()) {
+        this.printCenteredLine(item.y, item.attr, item.text);
+      }
+      this.printCenteredLine(0xb0, 0x47, "\x7f 1984  A.C.G.");
+      return;
+    }
+
+    for (let i = 0; i < GAME_MENU_LINES.length; i++) {
+      const line = GAME_MENU_LINES[i];
       let attr = line.attr;
       // Flash active player count (0 or 1) ($B44B-$B462)
       if (i === (this.twoPlayers ? 1 : 0)) attr |= 0x80;
@@ -502,6 +757,9 @@ export class SabreWulfGame {
   }
 
   private updateMenuFrame(): void {
+    if (this.isMobileMenuLayout()) {
+      return;
+    }
     let changed = false;
 
     if (this.input.isDigitDown(1)) {
@@ -559,12 +817,27 @@ export class SabreWulfGame {
     this.screen.clearPlayArea();
     this.drawStampList(ROOM_MAIN_MENU);
     this.screen.clearPanel();
-    for (const line of HALL_OF_FAME_LINES) {
-      this.screen.printColourString(line.x, line.y, line.attr, line.text);
+
+    const mobile = this.isMobileMenuLayout();
+    const entryCount = mobile ? 5 : 6;
+
+    if (mobile) {
+      this.printCenteredLine(0x30, 0x47, "ULTIMATE HALL OF FAME");
+      for (let i = 1; i <= entryCount; i++) {
+        const line = HALL_OF_FAME_LINES[i];
+        this.screen.printColourString(line.x, line.y, line.attr, line.text);
+      }
+      this.printCenteredLine(0x98, 0x47, "BACK TO MENU");
+      this.printCenteredLine(0xb0, 0x47, "\x7f 1984  A.C.G.");
+    } else {
+      for (const line of HALL_OF_FAME_LINES) {
+        this.screen.printColourString(line.x, line.y, line.attr, line.text);
+      }
     }
-    // Print top 6 BCD scores + initials starting at (X=$68 => col 13, Y=$48, step +$10) ($B2B7-$B2D5)
+
+    // Print top BCD scores + initials starting at (X=$68 => col 13, Y=$48, step +$10) ($B2B7-$B2D5)
     let yPx = 0x48;
-    for (let i = 0; i < 6; i++) {
+    for (let i = 0; i < entryCount; i++) {
       const entry = this.highScores[i];
       const str = formatBcdScore(entry.score);
       let col = 0x68 >> 3;
@@ -585,11 +858,15 @@ export class SabreWulfGame {
 
   private finishHallOfFame(): void {
     if (this.hofReturnToMenu) {
-      this.screen.clearPanel();
+      this.menuSubScreen = "MAIN";
+      this.screen.clearPlayArea();
+      this.drawStampList(ROOM_MAIN_MENU);
       this.drawMenuLines();
       this.phase = "MENU";
       this.menuIdleTimer = 0x0300;
-      this.beeper.playTune(TUNE_MAIN);
+      if (!this.isMobileMenuLayout()) {
+        this.beeper.playTune(TUNE_MAIN);
+      }
     } else {
       this.enterMenu();
     }
@@ -973,9 +1250,10 @@ export class SabreWulfGame {
       const pIdx = this.pendingHighScoreQueue.shift()!;
       const score = this.players[pIdx].scoreBcd;
 
-      // Find lowest slot beaten
+      // Find lowest slot beaten (Top 5 on mobile where 6th row is 'BACK TO MENU', Top 6 on desktop)
+      const maxSlots = this.isMobileMenuLayout() ? 5 : 6;
       let insertAt = -1;
-      for (let i = 0; i < 6; i++) {
+      for (let i = 0; i < maxSlots; i++) {
         if (compareBcdScores(score, this.highScores[i].score) > 0) {
           insertAt = i;
           break;

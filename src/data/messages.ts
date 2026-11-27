@@ -34,13 +34,6 @@ export const GAME_MENU_LINES: readonly ScreenMessage[] = [
   { x: 0x48, y: 0xb0, attr: 0x47, text: "\x7f 1984  A.C.G." },
 ];
 
-export const MOBILE_GAME_MENU_LINES: readonly ScreenMessage[] = [
-  { x: 76, y: 0x48, attr: 0x46, text: "1 PLAYER GAME" },
-  { x: 76, y: 0x60, attr: 0x46, text: "2 PLAYER GAME" },
-  { x: 88, y: 0x88, attr: 0x47, text: "START GAME" },
-  { x: 72, y: 0xb0, attr: 0x47, text: "\x7f 1984  A.C.G." },
-];
-
 export const HALL_OF_FAME_LINES: readonly ScreenMessage[] = [
   { x: 0x28, y: 0x30, attr: 0x47, text: "ULTIMATE HALL OF FAME" },
   { x: 0x38, y: 0x48, attr: 0x47, text: "1ST               " },

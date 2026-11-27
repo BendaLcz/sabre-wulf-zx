@@ -59,6 +59,7 @@ function toggleMute(): void {
   btnMuteLabel.textContent = next ? "MUTED" : "SOUND ON";
   btnMute.classList.toggle("active", !next);
   btnMute.classList.toggle("muted", next);
+  game.refreshMenuIfActive();
 }
 
 function toggleCrt(): void {
@@ -66,6 +67,7 @@ function toggleCrt(): void {
   crtOverlay.classList.toggle("hidden", !crtEnabled);
   btnCrtLabel.textContent = crtEnabled ? "CRT ON" : "CRT OFF";
   btnCrt.classList.toggle("active", crtEnabled);
+  game.refreshMenuIfActive();
 }
 
 function toggleMap(): void {
@@ -233,6 +235,7 @@ function syncFullscreenButtonVisibility(): void {
   const hideFs = isInstalledStandaloneApp() || !canUseFullscreenApi();
   btnFullscreen.hidden = hideFs;
   btnForceLandscape.hidden = hideFs;
+  game.refreshMenuIfActive();
 }
 syncFullscreenButtonVisibility();
 standaloneModeQuery.addEventListener?.("change", syncFullscreenButtonVisibility);
@@ -240,13 +243,36 @@ if (isInstalledStandaloneApp()) {
   void tryLockLandscape();
 }
 
-btnFullscreen.addEventListener("click", () => {
-  btnFullscreen.blur();
+function toggleFullscreenMode(): void {
   if (!document.fullscreenElement) {
     void enterFullscreenLandscape();
   } else {
     void document.exitFullscreen?.();
   }
+}
+
+function quitStandaloneApp(): void {
+  try {
+    window.close();
+  } catch {
+    // Ignore if blocked by OS/browser container
+  }
+}
+
+game.setExternalUiHooks({
+  isStandaloneApp: isInstalledStandaloneApp,
+  canFullscreen: canUseFullscreenApi,
+  isFullscreen: () => Boolean(document.fullscreenElement),
+  toggleFullscreen: toggleFullscreenMode,
+  isCrtEnabled: () => crtEnabled,
+  toggleCrt,
+  toggleMute,
+  quitApp: quitStandaloneApp,
+});
+
+btnFullscreen.addEventListener("click", () => {
+  btnFullscreen.blur();
+  toggleFullscreenMode();
 });
 btnForceLandscape.addEventListener("click", () => {
   btnForceLandscape.blur();
@@ -255,6 +281,7 @@ btnForceLandscape.addEventListener("click", () => {
 });
 document.addEventListener("fullscreenchange", () => {
   btnFullscreen.classList.toggle("active", Boolean(document.fullscreenElement));
+  game.refreshMenuIfActive();
   scheduleViewportResync();
 });
 
@@ -267,9 +294,13 @@ canvas.addEventListener("pointerdown", (ev) => {
 });
 monitorFrame.addEventListener("pointerdown", (ev) => {
   game.beeper.unlock();
+  const isMobile = window.matchMedia(
+    "(pointer: coarse), (max-width: 760px)",
+  ).matches;
   if (
     ev.target !== canvas &&
-    (game.getPhase() === "LOADING" || game.getPhase() === "HALL_OF_FAME")
+    (game.getPhase() === "LOADING" ||
+      (!isMobile && game.getPhase() === "HALL_OF_FAME"))
   ) {
     game.triggerPrimaryAction();
   }
@@ -869,6 +900,10 @@ function updateUiIndicators(): void {
   }
 
   const pausable = isPausablePhase();
+  btnOptions.hidden = !pausable;
+  if (!pausable && document.body.classList.contains("options-open")) {
+    setOptionsOpen(false);
+  }
   const pausedInGame = pausable && game.input.isPaused();
   btnPause.disabled = !pausable;
   btnPause.classList.toggle("active", pausedInGame);
