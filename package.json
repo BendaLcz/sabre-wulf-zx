@@ -1,14 +1,12 @@
 {
   "name": "sabre-wulf-zx",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "private": true,
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
-    "preview": "vite preview --host",
-    "icons": "node scripts/make-icons.mjs",
-    "jungle": "esbuild scripts/make-jungle.ts --bundle --platform=node --format=esm --outfile=node_modules/.cache/make-jungle.mjs --log-level=warning && node node_modules/.cache/make-jungle.mjs"
+    "preview": "vite preview --host"
   },
   "devDependencies": {
     "typescript": "^5.6.3",
